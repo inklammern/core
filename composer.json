@@ -6,6 +6,8 @@
 		"name": "Marcus",
 		"email": ""
 	}],
+	"minimum-stability": "dev",
+	"prefer-stable": true,
 	"require": {
 		"php": ">= 5.5",
 		"container-interop/container-interop": "~1.0",
