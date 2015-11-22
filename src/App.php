@@ -9,7 +9,8 @@ use Inkl\Core\Senders\ResponseSender;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 
-class App {
+class App
+{
 
 	/** @var ContainerInterface */
 	private $container;
@@ -30,7 +31,8 @@ class App {
 	 * @param ResponseFactory $responseFactory
 	 * @param ResponseSender $responseSender
 	 */
-	public function __construct(ContainerInterface $container, RouterContainer $routerContainer, ServerRequestInterface $serverRequest, ResponseFactory $responseFactory, ResponseSender $responseSender) {
+	public function __construct(ContainerInterface $container, RouterContainer $routerContainer, ServerRequestInterface $serverRequest, ResponseFactory $responseFactory, ResponseSender $responseSender)
+	{
 		$this->container = $container;
 		$this->routerContainer = $routerContainer;
 		$this->serverRequest = $serverRequest;
@@ -38,13 +40,14 @@ class App {
 		$this->responseFactory = $responseFactory;
 	}
 
-	public function run() {
+	public function run()
+	{
 		$this->dispatch();
 	}
 
 
-	protected function dispatch() {
-
+	protected function dispatch()
+	{
 		$route = $this->matchRoute();
 
 		$response = $this->handleRoute($route);
@@ -53,14 +56,17 @@ class App {
 	}
 
 
-	private function matchRoute() {
+	private function matchRoute()
+	{
 		return $this->routerContainer->getMatcher()->match($this->serverRequest);
 	}
 
 
-	protected function handleRoute($route) {
+	protected function handleRoute($route)
+	{
 
-		if ($route) {
+		if ($route)
+		{
 			return $this->invokeRouteHandler($route->handler);
 		}
 
@@ -68,22 +74,25 @@ class App {
 	}
 
 
-	protected function invokeRouteHandler($handler) {
-
+	protected function invokeRouteHandler($handler)
+	{
 		$response = '';
 
 		// invoke by array
-		if (is_array($handler) && count($handler) == 2) {
+		if (is_array($handler) && count($handler) == 2)
+		{
 			$response = call_user_func_array([$this->container->get($handler[0]), $handler[1]], []);
 		}
 
 		// invoke by closure
-		if ($handler instanceof \Closure) {
+		if ($handler instanceof \Closure)
+		{
 			$response = $handler($this->container);
 		}
 
 		// response
-		if ($response instanceof ResponseInterface) {
+		if ($response instanceof ResponseInterface)
+		{
 			return $response;
 		}
 
