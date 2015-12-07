@@ -2,6 +2,7 @@
 
 namespace Inkl\Core;
 
+use Aura\Router\Exception;
 use Aura\Router\RouterContainer;
 use Interop\Container\ContainerInterface;
 use Inkl\Core\Factories\ResponseFactory;
@@ -66,10 +67,12 @@ class App
 	{
 		if ($route)
 		{
-			// set attributes
-			$serverRequestAttributesProperty = (new \ReflectionClass($this->serverRequest))->getProperty('attributes');
-			$serverRequestAttributesProperty->setAccessible(true);
-			$serverRequestAttributesProperty->setValue($this->serverRequest, $route->attributes);
+			foreach ($route->attributes as $key => $value)
+			{
+				$this->serverRequest = $this->serverRequest->withAttribute($key, $value);
+			}
+
+			$this->container->set(ServerRequestInterface::class, $this->serverRequest);
 
 			return $this->invokeRouteHandler($route->handler);
 		}
@@ -85,7 +88,24 @@ class App
 		// invoke by array
 		if (is_array($handler) && count($handler) == 2)
 		{
-			$response = call_user_func_array([$this->container->get($handler[0]), $handler[1]], []);
+			$inputParams = array_merge($this->serverRequest->getQueryParams(), $this->serverRequest->getAttributes());
+
+			$reflectionMethod = new \ReflectionMethod($handler[0], $handler[1]);
+			$reflectionParams = $reflectionMethod->getParameters();
+
+			$methodParams = [];
+			foreach ($reflectionParams as $reflectionParam)
+			{
+				$name = $reflectionParam->getName();
+
+				if (!isset($inputParams[$name]) && !$reflectionParam->isOptional()) {
+					throw new \Exception(sprintf('cannot resolve parameter "%s" for %s::%s', $name, $handler[0], $handler[1]));
+				}
+
+				$methodParams[] = (isset($inputParams[$name]) ? $inputParams[$name] : $reflectionParam->getDefaultValue());
+			}
+
+			$response = call_user_func_array([$this->container->get($handler[0]), $handler[1]], $methodParams);
 		}
 
 		// invoke by closure
