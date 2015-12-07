@@ -64,9 +64,13 @@ class App
 
 	protected function handleRoute($route)
 	{
-
 		if ($route)
 		{
+			// set attributes
+			$serverRequestAttributesProperty = (new \ReflectionClass($this->serverRequest))->getProperty('attributes');
+			$serverRequestAttributesProperty->setAccessible(true);
+			$serverRequestAttributesProperty->setValue($this->serverRequest, $route->attributes);
+
 			return $this->invokeRouteHandler($route->handler);
 		}
 

@@ -17,7 +17,7 @@ class AppConfig {
 	private $serverRequest;
 
 	/**
-	 * Enviroment constructor.
+	 * AppConfig constructor.
 	 * @param ServerRequestInterface $serverRequest
 	 * @param Filesystem $filesystem
 	 */
