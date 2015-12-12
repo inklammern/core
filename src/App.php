@@ -83,10 +83,10 @@ class App
 
 	protected function invokeRouteHandler($handler)
 	{
-		$response = '';
+		$responseData = '';
 
 		// invoke by array
-		if (is_array($handler) && count($handler) == 2)
+		if (is_array($handler) && count($handler) >= 2)
 		{
 			$inputParams = array_merge($this->serverRequest->getQueryParams(), $this->serverRequest->getAttributes());
 
@@ -105,22 +105,27 @@ class App
 				$methodParams[] = (isset($inputParams[$name]) ? $inputParams[$name] : $reflectionParam->getDefaultValue());
 			}
 
-			$response = call_user_func_array([$this->container->get($handler[0]), $handler[1]], $methodParams);
+			$responseData = call_user_func_array([$this->container->get($handler[0]), $handler[1]], $methodParams);
+
+			if (isset($handler[2]) && $handler[2] instanceof \Closure)
+			{
+				$responseData = $handler[2]($responseData, $this->responseFactory, $this->container);
+			}
 		}
 
 		// invoke by closure
 		if ($handler instanceof \Closure)
 		{
-			$response = $handler($this->container);
+			$responseData = $handler($this->container);
 		}
 
 		// response
-		if ($response instanceof ResponseInterface)
+		if ($responseData instanceof ResponseInterface)
 		{
-			return $response;
+			return $responseData;
 		}
 
-		return $this->responseFactory->create((string)$response);
+		return $this->responseFactory->create((string)$responseData);
 	}
 
 }
