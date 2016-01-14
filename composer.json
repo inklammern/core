@@ -13,7 +13,8 @@
 		"aura/router": "3.0.0@stable",
 		"psr/http-message": "^1.0",
 		"zendframework/zend-diactoros": "^1.1",
-		"symfony/filesystem": "^3.0@stable"
+		"symfony/filesystem": "^3.0@stable",
+		"symfony/event-dispatcher": "^3.0@stable"
 	},
 	"autoload": {
 		"psr-4": {
