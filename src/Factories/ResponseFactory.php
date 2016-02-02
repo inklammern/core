@@ -24,7 +24,7 @@ class ResponseFactory
 		return new Response($this->createStreamFromString($content), $status, $headers);
 	}
 
-	public function createRedirect($location, $status = 301)
+	public function createRedirect($location, $status = 302)
 	{
 		return new Response($this->createStreamFromString(''), $status, ['Location' => $location]);
 	}
