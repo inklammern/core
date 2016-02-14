@@ -101,7 +101,7 @@ class App
 		// invoke by array
 		if (is_array($handler) && count($handler) >= 2)
 		{
-			$inputParams = array_merge($this->serverRequest->getQueryParams(), $this->serverRequest->getAttributes());
+			$inputParams = array_merge($this->serverRequest->getQueryParams(), $this->serverRequest->getAttributes(), $this->serverRequest->getParsedBody());
 
 			$reflectionMethod = new \ReflectionMethod($handler[0], $handler[1]);
 			$reflectionParams = $reflectionMethod->getParameters();
