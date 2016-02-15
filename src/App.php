@@ -4,11 +4,13 @@ namespace Inkl\Core;
 
 use Aura\Router\Exception;
 use Aura\Router\RouterContainer;
+use Inkl\Core\Events\RouteEvent;
 use Interop\Container\ContainerInterface;
 use Inkl\Core\Factories\ResponseFactory;
 use Inkl\Core\Senders\ResponseSender;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 class App
 {
@@ -23,6 +25,8 @@ class App
 	private $responseFactory;
 	/** @var ResponseSender */
 	private $responseSender;
+	/** @var EventDispatcherInterface */
+	private $eventDispatcher;
 
 	/**
 	 * App constructor.
@@ -31,14 +35,16 @@ class App
 	 * @param ServerRequestInterface $serverRequest
 	 * @param ResponseFactory $responseFactory
 	 * @param ResponseSender $responseSender
+	 * @param EventDispatcherInterface $eventDispatcher
 	 */
-	public function __construct(ContainerInterface $container, RouterContainer $routerContainer, ServerRequestInterface $serverRequest, ResponseFactory $responseFactory, ResponseSender $responseSender)
+	public function __construct(ContainerInterface $container, RouterContainer $routerContainer, ServerRequestInterface $serverRequest, ResponseFactory $responseFactory, ResponseSender $responseSender, EventDispatcherInterface $eventDispatcher)
 	{
 		$this->container = $container;
 		$this->routerContainer = $routerContainer;
 		$this->serverRequest = $serverRequest;
 		$this->responseSender = $responseSender;
 		$this->responseFactory = $responseFactory;
+		$this->eventDispatcher = $eventDispatcher;
 	}
 
 	public function run()
@@ -51,6 +57,10 @@ class App
 	{
 		$route = $this->matchRoute();
 
+		$routeEvent = new RouteEvent($route);
+		$this->eventDispatcher->dispatch('app.route_match_after', $routeEvent);
+		$route = $routeEvent->getRoute();
+
 		$response = $this->handleRoute($route);
 
 		$this->responseSender->send($response);
@@ -59,25 +69,28 @@ class App
 
 	private function matchRoute()
 	{
-		return $this->routerContainer->getMatcher()->match($this->serverRequest);
+		$route = $this->routerContainer->getMatcher()->match($this->serverRequest);
+		if (!$route)
+		{
+			$route = $this->routerContainer->getMap()->route('404', null, function() {
+				return $this->responseFactory->create('Not Found', 404);
+			});
+		}
+
+		return $route;
 	}
 
 
 	protected function handleRoute($route)
 	{
-		if ($route)
+		foreach ($route->attributes as $key => $value)
 		{
-			foreach ($route->attributes as $key => $value)
-			{
-				$this->serverRequest = $this->serverRequest->withAttribute($key, $value);
-			}
-
-			$this->container->set(ServerRequestInterface::class, $this->serverRequest);
-
-			return $this->invokeRouteHandler($route->handler);
+			$this->serverRequest = $this->serverRequest->withAttribute($key, $value);
 		}
 
-		return $this->responseFactory->create('Not Found', 404);
+		$this->container->set(ServerRequestInterface::class, $this->serverRequest);
+
+		return $this->invokeRouteHandler($route->handler);
 	}
 
 
@@ -88,7 +101,7 @@ class App
 		// invoke by array
 		if (is_array($handler) && count($handler) >= 2)
 		{
-			$inputParams = array_merge($this->serverRequest->getQueryParams(), $this->serverRequest->getAttributes());
+			$inputParams = array_merge($this->serverRequest->getQueryParams(), $this->serverRequest->getAttributes(), $this->serverRequest->getParsedBody());
 
 			$reflectionMethod = new \ReflectionMethod($handler[0], $handler[1]);
 			$reflectionParams = $reflectionMethod->getParameters();

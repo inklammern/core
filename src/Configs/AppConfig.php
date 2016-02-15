@@ -7,10 +7,6 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class AppConfig {
 
-	const BASE_THEME = 'base';
-
-	private $theme;
-
 	/** @var Filesystem */
 	private $filesystem;
 	/** @var ServerRequestInterface */
@@ -26,22 +22,6 @@ class AppConfig {
 		$this->filesystem = $filesystem;
 		$this->serverRequest = $serverRequest;
 	}
-
-
-	public function setTheme($theme) {
-		$this->theme = $theme;
-		return $this;
-	}
-
-	public function getTheme() {
-		return ($this->theme ? $this->theme : self::BASE_THEME);
-	}
-
-
-	public function getThemes() {
-		return array_unique([$this->getTheme(), self::BASE_THEME]);
-	}
-
 
 	public function getBaseUrl() {
 
